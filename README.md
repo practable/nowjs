@@ -496,3 +496,47 @@ Still got the base_path problem with css and js assets, being looked for at `htt
 added base href, did not fix issue...
 
 [not sure about this router config as seems different, but apparently works](https://github.com/antfu/vitesse/discussions/226)
+
+
+ok sorted now .... just need to include some code to allow the `vite.config.js` to access the environment vars
+
+```
+import { defineConfig, loadEnv } from "vite";
+import vue from "@vitejs/plugin-vue";
+
+// https://vitejs.dev/config/
+const path = require("path");
+export default ({ mode }) => {
+  process.env = { ...process.env, ...loadEnv(mode, process.cwd()) };
+
+  // import.meta.env.VITE_BASE available here with: process.env.VITE_BASE
+
+  return defineConfig({
+    base: process.env.VITE_BASE,
+    plugins: [vue()],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "./src"),
+      },
+    },
+  });
+};
+```
+
+then define `env.production` environment vars with the subpath you want
+
+```
+VITE_APP_BOOK_SERVER=https://book.practable.io
+VITE_APP_ASSET_SERVER=https://assets.practable.io
+VITE_BASE='/book/'
+
+```
+`env.development` just gets a '/' so it works at local host
+
+```
+VITE_APP_BOOK_SERVER=https://book.practable.io
+VITE_APP_ASSET_SERVER=https://assets.practable.io
+VITE_BASE='/'
+```
+
+Note in this example, we are using the AWS-hosted book service for testing against in development and production, and those URLs do not affect the base path because they are used by API calls and not to find assets etc (they're on a different server anyway)
